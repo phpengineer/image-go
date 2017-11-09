@@ -8,6 +8,7 @@ import (
 	"log"
 	"encoding/json"
 	"strings"
+	"strconv"
 )
 
 type Size interface {
@@ -34,7 +35,7 @@ func (handle *Handler) Index(w http.ResponseWriter, req *http.Request, params ht
 
 func (handle *Handler) Upload(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 	formField := conf.GetString("upload.form_field")
-	allowTypeSlice := conf.GetString("upload.allow_type")
+	allowTypeSlice := conf.GetStringSlice("upload.allow_type")
 	rootDir := conf.GetString("upload.root_dir")
 	filenameLen := conf.GetInt("upload.filename_len")
 	dirNameLen := conf.GetInt("upload.dirname_len")
@@ -72,9 +73,25 @@ func (handle *Handler) Upload(w http.ResponseWriter, req *http.Request, params h
 		return
 	}
 
-	if size ,ok := file.(Size); ok {
-		
+	//判断文件大小
+	if fileInterface ,ok := file.(FileInfo); ok {
+		fileInfo, _ := fileInterface.FileInfo()
+		size := fileInfo.Size() / 1024
+		if size > int64(maxSize) {
+			log.Printf("Upload image beyond maximum limit: %d kb", maxSize)
+			handle.jsonError(w,"Upload image size"+ strconv.Itoa(int(size)) +"maximum limit! ", nil)
+			return
+		}
+
+
 	}
+
+	//生成文件目录
+	var randString string
+	var uploadPath string
+	var saveFilename string
+
+	randString = strings.ToUpper()
 
 
 
